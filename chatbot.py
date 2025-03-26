@@ -2,6 +2,7 @@ import os
 import logging
 import asyncio
 import dotenv
+import re
 import requests
 from telegram import Update, Bot
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, CallbackContext
@@ -25,15 +26,21 @@ async def call_openrouter_api(prompt: str) -> str:
         "messages": [
             {"role": "system", "content": hardcoded_prompt},
             {"role": "user", "content": prompt}
-        ],
-        "max_tokens": 20,  
-        "temperature": 0.7,  
-        "top_p": 0.9
+        ]
     }
     try:
         response = requests.post(OPENROUTER_API_URL, json=payload, headers=headers)
         response.raise_for_status()
-        return response.json().get("choices", [{}])[0].get("message", {}).get("content", "Error: No response")
+
+        full_response = response.json().get("choices", [{}])[0].get("message", {}).get("content", "")
+
+        sentences = re.split(r'(?<=[.!?])\s+', full_response)  
+        short_response = " ".join(sentences[:2])  
+
+        return short_response if short_response else "I have nothing to say."
+        
+       # return response.json().get("choices", [{}])[0].get("message", {}).get("content", "Error: No response")
+    
     except requests.exceptions.RequestException as e:
         logging.error(f"Error in API request: {e}")
         return "Sorry, there was an error processing your request."
@@ -45,7 +52,7 @@ async def handle_message(update: Update, context: CallbackContext):
     await update.message.reply_text(response_text)
 
 async def start(update: Update, context: CallbackContext):
-    await update.message.reply_text("Hello! I'm your AI bot. Send me a message and I'll reply.")
+    await update.message.reply_text("Hello! I'm thunderboi. Send me a message and I'll reply.")
 
 def main():
     application = Application.builder().token(TELEGRAM_TOKEN).build()
