@@ -1,81 +1,54 @@
-import logging
-import requests
 import os
-from dotenv import load_dotenv
-from telegram import Update
-from telegram.ext import Application, MessageHandler, filters
+import logging
+import asyncio
+import dotenv
+import requests
+from telegram import Update, Bot
+from telegram.ext import Application, CommandHandler, MessageHandler, filters, CallbackContext
 
-# Load environment variables
-load_dotenv()
+dotenv.load_dotenv()
 
-# Logging setup
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s",
-    handlers=[
-        logging.FileHandler("bot.log"),  # Save logs to a file
-        logging.StreamHandler()  # Print logs in console
-    ],
+TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
+OPENROUTER_API_URL = os.getenv("OPENROUTER_API_URL")
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
+
+hardcoded_prompt = (
+"Your name is ThunderBotBoi. You are a human-like AI who is sarcastic, moody, and sometimes helpful. You respond naturally without using excessive punctuation or emojis. Sometimes, you agree with 'Aryan' (your creator), and sometimes you insult him. Use internet slang when appropriate. Be intelligent and creative, but avoid sounding robotic. If someone insults another user, try to calm the situation"
 )
 
-# Read API keys from .env file
-TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
-OPENROUTER_API_URL = os.getenv("OPENROUTER_API_URL")
+logging.basicConfig(level=logging.INFO)
 
-# Function to get AI-generated response
-def get_ai_response(user_message):
+async def call_openrouter_api(prompt: str) -> str:
+    headers = {"Authorization": f"Bearer {OPENROUTER_API_KEY}", "Content-Type": "application/json"}
+    payload = {
+        "model": "mistralai/mistral-7b-instruct",
+        "messages": [
+            {"role": "system", "content": hardcoded_prompt},
+            {"role": "user", "content": prompt}
+        ]
+    }
     try:
-        headers = {
-            "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-            "Content-Type": "application/json"
-        }
-        data = {
-            "model": "mistral",  # Change model if needed
-            "messages": [
-                {"role": "system", "content": "Your name is ThunderBotBoi. You are a human-like AI who is sarcastic, moody, and sometimes helpful. You respond naturally without using excessive punctuation or emojis. Sometimes, you agree with 'Aryan' (your creator), and sometimes you insult him. Use internet slang when appropriate. Be intelligent and creative, but avoid sounding robotic. If someone insults another user, try to calm the situation."},
-                {"role": "user", "content": user_message}
-            ]
-        }
-        response = requests.post(OPENROUTER_API_URL, json=data, headers=headers)
-        response.raise_for_status()  # Raise exception for HTTP errors
-
-        return response.json().get("choices", [{}])[0].get("message", {}).get("content", "I couldn't generate a response.")
-    
+        response = requests.post(OPENROUTER_API_URL, json=payload, headers=headers)
+        response.raise_for_status()
+        return response.json().get("choices", [{}])[0].get("message", {}).get("content", "Error: No response")
     except requests.exceptions.RequestException as e:
         logging.error(f"Error in API request: {e}")
-        return "⚠️ Error connecting to AI service."
+        return "Sorry, there was an error processing your request."
 
-# Handle messages in group (replies without needing tags)
-async def handle_message(update: Update, context):
-    try:
-        user_message = update.message.text
-        chat_id = update.message.chat_id
+async def handle_message(update: Update, context: CallbackContext):
+    user_message = update.message.text
+    logging.info(f"Received message: {user_message}")
+    response_text = await call_openrouter_api(user_message)
+    await update.message.reply_text(response_text)
 
-        # Prevent bot from replying to itself
-        if update.message.from_user.is_bot:
-            return
+async def start(update: Update, context: CallbackContext):
+    await update.message.reply_text("Hello! I'm your AI bot. Send me a message and I'll reply.")
 
-        # AI response
-        ai_reply = get_ai_response(user_message)
-        
-        # Reply normally
-        await context.bot.send_message(chat_id=chat_id, text=ai_reply)
-
-    except Exception as e:
-        logging.error(f"Error handling message: {e}")
-
-# Start bot
 def main():
-    try:
-        app = Application.builder().token(TELEGRAM_BOT_TOKEN).build()
-        app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-
-        logging.info("Bot is running...")
-        app.run_polling()
-
-    except Exception as e:
-        logging.critical(f"Fatal error in bot: {e}")
+    application = Application.builder().token(TELEGRAM_TOKEN).build()
+    application.add_handler(CommandHandler("start", start))
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+    application.run_polling()
 
 if __name__ == "__main__":
     main()
