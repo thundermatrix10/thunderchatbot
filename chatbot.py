@@ -69,7 +69,6 @@ def main():
         app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
         logging.info("Bot is running...")
-        logging.info(" ^^^^^^^^^^^^^ GROQ_API_KEY:", GROQ_API_KEY)
         app.run_polling()
 
     except Exception as e:
