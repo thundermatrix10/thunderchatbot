@@ -26,8 +26,9 @@ async def call_openrouter_api(prompt: str) -> str:
             {"role": "system", "content": hardcoded_prompt},
             {"role": "user", "content": prompt}
         ],
-        max_tokens=20, 
-        temperature=0.7 
+        "max_tokens": 20,  
+        "temperature": 0.7,  
+        "top_p": 0.9
     }
     try:
         response = requests.post(OPENROUTER_API_URL, json=payload, headers=headers)
