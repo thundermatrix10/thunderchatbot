@@ -32,14 +32,14 @@ async def call_openrouter_api(prompt: str) -> str:
         response = requests.post(OPENROUTER_API_URL, json=payload, headers=headers)
         response.raise_for_status()
 
-        full_response = response.json().get("choices", [{}])[0].get("message", {}).get("content", "")
+        # full_response = response.json().get("choices", [{}])[0].get("message", {}).get("content", "")
 
-        sentences = re.split(r'(?<=[.!?])\s+', full_response)  
-        short_response = " ".join(sentences[:2])  
+        # sentences = re.split(r'(?<=[.!?])\s+', full_response)  
+        # short_response = " ".join(sentences[:2])  
 
-        return short_response if short_response else "I have nothing to say."
+        # return short_response if short_response else "I have nothing to say."
         
-       # return response.json().get("choices", [{}])[0].get("message", {}).get("content", "Error: No response")
+       return response.json().get("choices", [{}])[0].get("message", {}).get("content", "Error: No response")
     
     except requests.exceptions.RequestException as e:
         logging.error(f"Error in API request: {e}")
