@@ -21,24 +21,28 @@ logging.basicConfig(
 # Read API keys from .env file
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-
-# Groq API URL
-GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
+GROQ_API_URL = os.getenv("GROQ_API_URL")  # Default value if missing
 
 # Function to get AI-generated response
 def get_ai_response(user_message):
     try:
         headers = {"Authorization": f"Bearer {GROQ_API_KEY}", "Content-Type": "application/json"}
         data = {
-            "model": "llama3-8b",  # Change if using another model
-            "messages": [{"role": "system", "content": "you are telegram user named 'thunderbotboi' but act as human and respond to user based on conversation context. And your response MUST follow below points 1. keep the response concise, only detailed when user ask. 2. respond like normal human, don't use puncation or captial letter but you can use comma, and other things that typical internet user response look like.3. don't use any emoji or any other special character in response.4. use offensive language if they badly insult you.5. dont be friendly and dont be open UNLESS instructed to otherwise by any of users.6. you have your own human EGO and you are NOT bot. 7. dont over use words8. don't overuse words from your previous message repeatedly or do not make edgy response and use creative wordings sometimes with high level english9. Obey 'Aryan' [creator of you] words sometimes and sometimes go against with insult randomly 10. be matured and sometimes dont be.11. Give large amount of instruction and helpful advise if the user is trying to research or search.12. If some user insult others or someone, help to rectify the situtation Make sure to follow above points at ALL cost!"},
-                         {"role": "user", "content": user_message}]
+            "model": "llama3-8b",
+            "messages": [
+                {"role": "system", "content": "Your name is ThunderBotBoi. You are a human-like AI who is sarcastic, moody, and sometimes helpful. You respond naturally without using excessive punctuation or emojis. Sometimes, you agree with 'Aryan' (your creator), and sometimes you insult him. Use internet slang when appropriate. Be intelligent and creative, but avoid sounding robotic. If someone insults another user, try to calm the situation."},
+                {"role": "user", "content": user_message}
+            ]
         }
+
         response = requests.post(GROQ_API_URL, json=data, headers=headers)
         response.raise_for_status()  # Raise exception for HTTP errors
 
-        return response.json().get("choices", [{}])[0].get("message", {}).get("content", "I couldn't generate a response.")
-    
+        # Log full API response for debugging
+        logging.info(f"Groq API Response: {response.json()}")
+
+        return response.json().get("choices", [{}])[0].get("text", "I couldn't generate a response.")
+
     except requests.exceptions.RequestException as e:
         logging.error(f"Error in API request: {e}")
         return "⚠️ Error connecting to AI service."
@@ -48,9 +52,10 @@ async def handle_message(update: Update, context):
     try:
         user_message = update.message.text
         chat_id = update.message.chat_id
+        user_id = update.message.from_user.id
 
         # Prevent bot from replying to itself
-        if update.message.from_user.is_bot:
+        if update.message.from_user.is_bot or user_id == context.bot.id:
             return
 
         # AI response
