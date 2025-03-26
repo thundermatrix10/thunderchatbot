@@ -20,29 +20,28 @@ logging.basicConfig(
 
 # Read API keys from .env file
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
-GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-GROQ_API_URL = os.getenv("GROQ_API_URL")  # Default value if missing
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
+OPENROUTER_API_URL = os.getenv("OPENROUTER_API_URL")
 
 # Function to get AI-generated response
 def get_ai_response(user_message):
     try:
-        headers = {"Authorization": f"Bearer {GROQ_API_KEY}", "Content-Type": "application/json"}
+        headers = {
+            "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+            "Content-Type": "application/json"
+        }
         data = {
-            "model": "llama3-8b",
+            "model": "mistral",  # Change model if needed
             "messages": [
                 {"role": "system", "content": "Your name is ThunderBotBoi. You are a human-like AI who is sarcastic, moody, and sometimes helpful. You respond naturally without using excessive punctuation or emojis. Sometimes, you agree with 'Aryan' (your creator), and sometimes you insult him. Use internet slang when appropriate. Be intelligent and creative, but avoid sounding robotic. If someone insults another user, try to calm the situation."},
                 {"role": "user", "content": user_message}
             ]
         }
-
-        response = requests.post(GROQ_API_URL, json=data, headers=headers)
+        response = requests.post(OPENROUTER_API_URL, json=data, headers=headers)
         response.raise_for_status()  # Raise exception for HTTP errors
 
-        # Log full API response for debugging
-        logging.info(f"Groq API Response: {response.json()}")
-
-        return response.json().get("choices", [{}])[0].get("text", "I couldn't generate a response.")
-
+        return response.json().get("choices", [{}])[0].get("message", {}).get("content", "I couldn't generate a response.")
+    
     except requests.exceptions.RequestException as e:
         logging.error(f"Error in API request: {e}")
         return "⚠️ Error connecting to AI service."
@@ -52,10 +51,9 @@ async def handle_message(update: Update, context):
     try:
         user_message = update.message.text
         chat_id = update.message.chat_id
-        user_id = update.message.from_user.id
 
         # Prevent bot from replying to itself
-        if update.message.from_user.is_bot or user_id == context.bot.id:
+        if update.message.from_user.is_bot:
             return
 
         # AI response
