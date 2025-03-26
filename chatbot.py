@@ -25,8 +25,6 @@ GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 # Groq API URL
 GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
 
-print(" ^^^^^^^^^^^^^ GROQ_API_KEY:", GROQ_API_KEY)
-
 # Function to get AI-generated response
 def get_ai_response(user_message):
     try:
@@ -71,6 +69,7 @@ def main():
         app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
         logging.info("Bot is running...")
+        logging.info(" ^^^^^^^^^^^^^ GROQ_API_KEY:", GROQ_API_KEY)
         app.run_polling()
 
     except Exception as e:
