@@ -38,8 +38,7 @@ async def call_openrouter_api(prompt: str) -> str:
         # short_response = " ".join(sentences[:2])  
 
         # return short_response if short_response else "I have nothing to say."
-        
-       return response.json().get("choices", [{}])[0].get("message", {}).get("content", "Error: No response")
+        return response.json().get("choices", [{}])[0].get("message", {}).get("content", "Error: No response")
     
     except requests.exceptions.RequestException as e:
         logging.error(f"Error in API request: {e}")
