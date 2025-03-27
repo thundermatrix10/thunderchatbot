@@ -9,7 +9,7 @@ dotenv.load_dotenv()
 
 # Load environment variables
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
-GROQ_API_KEY = os.getenv("OPENROUTER_API_KEY")
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
 # Set up the Groq client
 groq_client = Groq(api_key=GROQ_API_KEY)
