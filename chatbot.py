@@ -22,7 +22,7 @@ logging.basicConfig(level=logging.INFO)
 async def call_openrouter_api(prompt: str) -> str:
     headers = {"Authorization": f"Bearer {OPENROUTER_API_KEY}", "Content-Type": "application/json"}
     payload = {
-        "model": "mistralai/mistral-7b-instruct",
+        "model": "deepseek-chat",
         "messages": [
             {"role": "system", "content": hardcoded_prompt},
             {"role": "user", "content": prompt}
