@@ -22,7 +22,7 @@ logging.basicConfig(level=logging.INFO)
 async def call_openrouter_api(prompt: str) -> str:
     headers = {"Authorization": f"Bearer {OPENROUTER_API_KEY}", "Content-Type": "application/json"}
     payload = {
-        "model": "llama3-8b",
+        "model": "llama-3.3-70b-versatile",
         "messages": [
             {"role": "system", "content": hardcoded_prompt},
             {"role": "user", "content": prompt}
